@@ -136,9 +136,7 @@ Shader "Hroi/FireteamVR/HPBar"
                 v2f o;
                 o.pos = v.vertex;
 
-                float3 cameraWorldPosition = _WorldSpaceCameraPos;
-                float3 objectWorldPosition = unity_ObjectToWorld._m03_m13_m23;
-                float3 objectToCameraVec = normalize(cameraWorldPosition - objectWorldPosition);
+                float3 objectToCameraVec = normalize(ObjSpaceViewDir(float4(0, 0, 0, 0)));
 
                 // Vertex position in world space
                 // float3 vertexPosition = mul((float3x3)unity_ObjectToWorld, v.vertex.xyz);
