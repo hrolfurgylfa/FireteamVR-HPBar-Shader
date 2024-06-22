@@ -35,6 +35,8 @@ Shader "Hroi/FireteamVR/HPBar"
         [Header(Death HUD Overlay)][Space(5)]
         _DeathHudOverlay("Death HUD Overlay Texture", 2D) = "white" {}
         _DeathHudColor("Death HUD Color", Color) = (0.0, 0.0, 0.0, 0.4)
+        _DeathHudLocationY("Death HUD Location Y", Float) = 1.23
+        _DeathHudSize("Death HUD Size", Float) = 3.5
 
         [Header(HUD Stuff)][Space(5)]
         _TunnelVision ("Tunnel Vision", Float) = 0.0
@@ -81,6 +83,8 @@ Shader "Hroi/FireteamVR/HPBar"
 
                 // HUD Stuff
                 float4 screenPos : TEXCOORD2;
+                float2 deathHudAspectRatioAdjustment: COLOR3;
+                float2 deathHudCenteringOffset: COLOR4;
             };
 
             // sampler2D _MainTex;
@@ -109,7 +113,10 @@ Shader "Hroi/FireteamVR/HPBar"
 
             sampler2D _DeathHudOverlay;
             float4 _DeathHudOverlay_ST;
+            float4 _DeathHudOverlay_TexelSize;
             float4 _DeathHudColor;
+            float _DeathHudLocationY;
+            float _DeathHudSize;
 
             float _TunnelVision;
             float _TunnelVisionStrength;
@@ -158,6 +165,10 @@ Shader "Hroi/FireteamVR/HPBar"
 
                 // HUD calculations
                 o.screenPos = ComputeScreenPos(o.pos);
+                float2 texAspectRatio = _DeathHudOverlay_TexelSize.zw;
+                float2 screenAspectRatio = _ScreenParams.xy;
+                o.deathHudAspectRatioAdjustment =  (screenAspectRatio / texAspectRatio) * _DeathHudSize;
+                o.deathHudCenteringOffset = (o.deathHudAspectRatioAdjustment - 1) / 2;
 
                 return o;
             }
@@ -199,9 +210,20 @@ Shader "Hroi/FireteamVR/HPBar"
                 float normalTunnelVision = tunnelVisionStrength * _TunnelVision;
                 float4 tunnelVisionFinal = float4(0, 0, 0, normalTunnelVision);
 
-                float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarAlpha.w)) + healthBarAlpha;
+                // You died HUD text
+                float2 deathHudTexUV = screenPos * i.deathHudAspectRatioAdjustment;
+                deathHudTexUV.y += _DeathHudLocationY * -1;
+                deathHudTexUV -= i.deathHudCenteringOffset;
+                float4 deathHudTex = tex2D(_DeathHudOverlay, deathHudTexUV);
+                float renderDeathHudText = (deathHudTex.w > 0.1)
+                    * ((deathHudTexUV.x > 0) * (deathHudTexUV.x < 1))
+                    * ((deathHudTexUV.y > 0) * (deathHudTexUV.y < 1));
+                float4 deathHudFinal = deathHudTex * renderDeathHudText + _DeathHudColor * !renderDeathHudText;
 
-                return (aboveHead * !_IsHUD) + (hudFinal * _IsHUD);
+                float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarAlpha.w)) + healthBarAlpha;
+                float4 hudFinalDeath = hudFinal * !_ShowDeathIndicator + deathHudFinal * _ShowDeathIndicator;
+
+                return (aboveHead * !_IsHUD) + (hudFinalDeath * _IsHUD);
             }
             ENDCG
         }
