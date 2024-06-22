@@ -14,6 +14,7 @@ Shader "Hroi/FireteamVR/HPBar"
         [Header(HPBar Size)][Space(5)]
         _BarHudOffset("Bar HUD Offset", Float) = -0.28
         _BarHudWidth("Bar HUD Width", Float) = 0.0
+        _BarHudHeight("Bar HUD Height", Float) = 0.0
         _ArmourBarSize("Armour Bar Size", Float) = 0.33
         _BarSize("Bar Size", Float) = 0.1
         _Alpha("Alpha", Float) = 0.6
@@ -101,6 +102,7 @@ Shader "Hroi/FireteamVR/HPBar"
 
             float _BarHudOffset;
             float _BarHudWidth;
+            float _BarHudHeight;
             float _ArmourBarSize;
             float _BarSize;
             float _Alpha;
@@ -181,7 +183,7 @@ Shader "Hroi/FireteamVR/HPBar"
                 // This X and Y is based on the screenspace if _IsHUD is true and
                 // otherwise the UVs of the model.
                 float x = ((1 - i.uv.x) * !_IsHUD) + (mapRange(0, 1, 1 - _BarHudWidth, _BarHudWidth, screenPos.x) * _IsHUD);
-                float y = ((1 - i.uv.y) * !_IsHUD) + ((screenPos.y + _BarHudOffset) * _IsHUD);
+                float y = ((1 - i.uv.y) * !_IsHUD) + (mapRange(0, 1, _BarHudHeight, 1 - _BarHudHeight, (screenPos.y + _BarHudOffset)) * _IsHUD);
 
                 // Armour calculations
                 float isArmourPos = x * _MaxArmour < _Armour;
