@@ -138,20 +138,19 @@ Shader "Hroi/FireteamVR/HPBar"
 
                 float3 objectToCameraVec = normalize(ObjSpaceViewDir(float4(0, 0, 0, 0)));
 
-                // Vertex position in world space
-                // float3 vertexPosition = mul((float3x3)unity_ObjectToWorld, v.vertex.xyz);
-                // float4 worldCoord = float4(unity_ObjectToWorld._m03, unity_ObjectToWorld._m13, unity_ObjectToWorld._m23, 1);
-                // float4 viewPos = mul(UNITY_MATRIX_V, worldCoord) + float4(vertexPosition, 0);
-                // float4 outPos = mul(UNITY_MATRIX_P, viewPos);
-
+                // Keep the plane looking at the camera
                 float3 up = objectToCameraVec;
                 float3 forward = float3(0,1,0);
                 float3 right = normalize(cross(up, forward));
                 forward = cross(right, up);
-                
                 float3x3 rotMatrix = float3x3(right, up, forward);
+
+                // Move the plane up to the camera to fill it completely
+                float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, -10, 1);
+                float3 fullScreenPos = mul(unity_WorldToObject, mul(UNITY_MATRIX_I_V, screenCoords)).xyz;
+
                 // This is done conditionally based on _IsHUD
-                o.pos.xyz = mul(o.pos.xyz, rotMatrix) * !_IsHUD + o.pos.xyz * _IsHUD;
+                o.pos.xyz = mul(o.pos.xyz, rotMatrix) * !_IsHUD + fullScreenPos * _IsHUD;
 
                 o.pos = UnityObjectToClipPos(o.pos);
                 o.uv.xy = v.uv.xy;

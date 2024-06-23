@@ -75,6 +75,7 @@ Material:
     - _Armour: 0.23
     - _ArmourBarSize: 0.3
     - _BarAlpha: 0.6
+    - _BarHudHeight: 0
     - _BarHudOffset: -0.25
     - _BarHudWidth: 1.33
     - _BarOffset: 0
