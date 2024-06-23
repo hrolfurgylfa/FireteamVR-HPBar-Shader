@@ -39,13 +39,23 @@ Shader "Hroi/FireteamVR/HPBar"
         _DeathHudLocationY("Death HUD Location Y", Float) = 1.23
         _DeathHudSize("Death HUD Size", Float) = 3.5
 
-        [Header(HUD Stuff)][Space(5)]
+        [Header(Tunnel Vision Overlay)][Space(5)]
         _TunnelVision ("Tunnel Vision", Float) = 0.0
         _TunnelVisionStrength ("Tunnel Vision Strength", Float) = 1.0
+
+        [Header(Team Marker)][Space(5)]
+        _TeamMarkerHue("Team Marker Hue", Float) = 0.7
+        _TeamMarkerSaturation("Team Marker Saturation", Float) = 0.7
+        _TeamMarkerBrightness("Team Marker Brightness", Float) = 1.0
+        _TeamMarkerAlpha("Team Marker Alpha", Float) = 0.6
+        _TeamMarkerTriangleFromY("Team Marker From Y", Float) = 0.6
+        _TeamMarkerTriangleToY("Team Marker To Y", Float) = 0.8
+        _TeamMarkerTriangleWidthX("Team Marker Width X", Float) = 0.39
 
         [Header(Toggles)][Space(5)]
         _ShowHealthBar("Show Health Bar", Float) = 1.0
         _ShowDeathIndicator("Show Death Indicator", Float) = 0.0
+        _ShowTeamMarker("Show Team Marker", Float) = 1.0
         _IsHUD("Is HUD", Float) = 0.0
     }
     SubShader
@@ -81,6 +91,7 @@ Shader "Hroi/FireteamVR/HPBar"
                 float halfBarSize : COLOR1;
                 float4 deathCrossColor : COLOR2;
                 float2 deathCrossTextureUV : TEXCOORD1;
+                float4 teamColor : COLOR5;
 
                 // HUD Stuff
                 float4 screenPos : TEXCOORD2;
@@ -123,14 +134,31 @@ Shader "Hroi/FireteamVR/HPBar"
             float _TunnelVision;
             float _TunnelVisionStrength;
 
+            float _TeamMarkerHue;
+            float _TeamMarkerSaturation;
+            float _TeamMarkerBrightness;
+            float _TeamMarkerAlpha;
+            float _TeamMarkerTriangleFromY;
+            float _TeamMarkerTriangleToY;
+            float _TeamMarkerTriangleWidthX;
+
             float _ShowHealthBar;
             float _ShowDeathIndicator;
+            float _ShowTeamMarker;
             float _IsHUD;
         
             float mapRange(float input_start, float input_end, float output_start, float output_end, float input) {
                 return output_start + ((output_end - output_start) / (input_end - input_start)) * (input - input_start);
             }
-        
+
+            // Source: https://docs.unity3d.com/Packages/com.unity.shadergraph@6.9/manual/Colorspace-Conversion-Node.html
+            void Unity_ColorspaceConversion_HSV_RGB_float(float3 In, out float3 Out)
+            {
+                float4 K = float4(1.0, 2.0 / 3.0, 1.0 / 3.0, 3.0);
+                float3 P = abs(frac(In.xxx + K.xyz) * 6.0 - K.www);
+                Out = In.z * lerp(K.xxx, saturate(P - K.xxx), In.y);
+            }
+
             v2f vert (appdata v)
             {
                 v2f o;
@@ -161,6 +189,10 @@ Shader "Hroi/FireteamVR/HPBar"
                 float deathShift = (sin(_Time.z * _DeathCrossShiftSpeed) + 1) / 2;
                 o.deathCrossColor = (_DeathCrossColor1 * deathShift) + (_DeathCrossColor2 * (1 - deathShift));
                 o.deathCrossTextureUV = TRANSFORM_TEX(v.uv, _DeathCrossTexture);
+                float3 teamColor;
+                float3 teamColorHSV = float3(_TeamMarkerHue, _TeamMarkerSaturation, _TeamMarkerBrightness);
+                Unity_ColorspaceConversion_HSV_RGB_float(teamColorHSV, teamColor);
+                o.teamColor = float4(teamColor, _TeamMarkerAlpha);
 
                 // HUD calculations
                 o.screenPos = ComputeScreenPos(o.pos);
@@ -196,10 +228,19 @@ Shader "Hroi/FireteamVR/HPBar"
                 float4 healthBarSolid = (hpBarColor * isBar * isHpBar) + (armourColor * isBar * !isHpBar);
                 float4 healthBarAlpha = float4(healthBarSolid.xyz, _Alpha * isBar);
 
+                // Team indicator
+                float trianglePos = mapRange(_TeamMarkerTriangleFromY, _TeamMarkerTriangleToY, 0, 1, y);
+                float triangleX = mapRange(_TeamMarkerTriangleWidthX, 1 - _TeamMarkerTriangleWidthX, 0, 1, x);
+                float inTeamMarker = (0 < trianglePos) * (trianglePos < 1)
+                    * ((1.0 - triangleX) < trianglePos) * ((triangleX) < trianglePos);
+                float4 teamMarker = i.teamColor * inTeamMarker;
+
                 // Add the death cross
                 fixed4 texCol = tex2D(_DeathCrossTexture, i.deathCrossTextureUV);
                 fixed4 deathCrossFinal = texCol * i.deathCrossColor;
-                float4 aboveHead = (healthBarAlpha * _ShowHealthBar) + (deathCrossFinal * _ShowDeathIndicator);
+                float4 aboveHead = (healthBarAlpha * _ShowHealthBar)
+                    + (teamMarker * _ShowTeamMarker)
+                    + (deathCrossFinal * _ShowDeathIndicator);
 
                 // Tunnel vision HUD
                 // float normalTunnelVision = max((abs(screenPos.x - 0.5) + abs(screenPos.y - 0.5)), 0.5);

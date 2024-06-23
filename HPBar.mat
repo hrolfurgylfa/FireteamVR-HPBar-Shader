@@ -92,7 +92,7 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Health: 0.01
-    - _IsHUD: 1
+    - _IsHUD: 0
     - _MaxArmour: 1
     - _MaxHealth: 0.74
     - _Metallic: 0
@@ -101,9 +101,17 @@ Material:
     - _Parallax: 0.02
     - _ShowDeathIndicator: 0
     - _ShowHealthBar: 1
+    - _ShowTeamMarker: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
+    - _TeamMarkerAlpha: 0.6
+    - _TeamMarkerBrightness: 1
+    - _TeamMarkerHue: 0.7
+    - _TeamMarkerSaturation: 0.7
+    - _TeamMarkerTriangleFromY: 0.6
+    - _TeamMarkerTriangleToY: 0.8
+    - _TeamMarkerTriangleWidthX: 0.39
     - _TunnelVision: 0.64
     - _TunnelVisionStrength: 1
     - _UVSec: 0
@@ -117,4 +125,5 @@ Material:
     - _DeathHudColor: {r: 0, g: 0, b: 0, a: 0.9490196}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _GoodColor: {r: 0.69411767, g: 0.98823535, b: 0.34901962, a: 1}
+    - _TeamMarkerOther: {r: 0, g: 0.4549672, b: 0.638, a: 1}
   m_BuildTextureStacks: []
