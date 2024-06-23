@@ -52,6 +52,9 @@ Shader "Hroi/FireteamVR/HPBar"
         _TeamMarkerTriangleToY("Team Marker To Y", Float) = 0.8
         _TeamMarkerTriangleWidthX("Team Marker Width X", Float) = 0.39
 
+        [Header(HUD)][Space(5)]
+        _HudDistanceFromCamera("HUD Distance From Camera", Float) = 0.001
+
         [Header(Toggles)][Space(5)]
         _ShowHealthBar("Show Health Bar", Float) = 1.0
         _ShowDeathIndicator("Show Death Indicator", Float) = 0.0
@@ -142,6 +145,8 @@ Shader "Hroi/FireteamVR/HPBar"
             float _TeamMarkerTriangleToY;
             float _TeamMarkerTriangleWidthX;
 
+            float _HudDistanceFromCamera;
+
             float _ShowHealthBar;
             float _ShowDeathIndicator;
             float _ShowTeamMarker;
@@ -174,7 +179,7 @@ Shader "Hroi/FireteamVR/HPBar"
                 float3x3 rotMatrix = float3x3(right, up, forward);
 
                 // Move the plane up to the camera to fill it completely
-                float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, -10, 1);
+                float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, _HudDistanceFromCamera * -1, 1);
                 float3 fullScreenPos = mul(unity_WorldToObject, mul(UNITY_MATRIX_I_V, screenCoords)).xyz;
 
                 // This is done conditionally based on _IsHUD

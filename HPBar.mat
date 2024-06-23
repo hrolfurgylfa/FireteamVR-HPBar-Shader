@@ -92,7 +92,8 @@ Material:
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Health: 0.01
-    - _IsHUD: 0
+    - _HudDistanceFromCamera: 0.1
+    - _IsHUD: 1
     - _MaxArmour: 1
     - _MaxHealth: 0.74
     - _Metallic: 0
