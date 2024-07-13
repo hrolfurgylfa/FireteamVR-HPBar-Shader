@@ -104,53 +104,52 @@ Shader "Hroi/FireteamVR/HPBar"
 
             // sampler2D _MainTex;
             // float4 _MainTex_ST;
-            float4 _GoodColor;
-            float4 _BadColor;
-            float4 _ArmourColor;
+            uniform float4 _GoodColor;
+            uniform float4 _BadColor;
+            uniform float4 _ArmourColor;
 
-            float _Health;
-            float _MaxHealth;
+            uniform float _Health;
+            uniform float _MaxHealth;
 
-            float _Armour;
-            float _MaxArmour;
+            uniform float _Armour;
+            uniform float _MaxArmour;
 
-            float _BarHudOffset;
-            float _BarHudWidth;
-            float _BarHudHeight;
-            float _ArmourBarSize;
-            float _BarSize;
-            float _Alpha;
+            uniform float _BarHudOffset;
+            uniform float _BarHudWidth;
+            uniform float _BarHudHeight;
+            uniform float _ArmourBarSize;
+            uniform float _BarSize;
+            uniform float _Alpha;
 
             sampler2D _DeathCrossTexture;
             float4 _DeathCrossTexture_ST;
-            float4 _DeathCrossColor1;
-            float4 _DeathCrossColor2;
-            float _DeathCrossShiftSpeed;
+            uniform float4 _DeathCrossColor1;
+            uniform float4 _DeathCrossColor2;
+            uniform float _DeathCrossShiftSpeed;
 
             sampler2D _DeathHudOverlay;
             float4 _DeathHudOverlay_ST;
-            float4 _DeathHudOverlay_TexelSize;
-            float4 _DeathHudColor;
-            float _DeathHudLocationY;
-            float _DeathHudSize;
+            uniform float4 _DeathHudOverlay_TexelSize;
+            uniform float4 _DeathHudColor;
+            uniform float _DeathHudLocationY;
+            uniform float _DeathHudSize;
 
-            float _TunnelVision;
-            float _TunnelVisionStrength;
+            uniform float _TunnelVision;
+            uniform float _TunnelVisionStrength;
 
-            float _TeamMarkerHue;
-            float _TeamMarkerSaturation;
-            float _TeamMarkerBrightness;
-            float _TeamMarkerAlpha;
-            float _TeamMarkerTriangleFromY;
-            float _TeamMarkerTriangleToY;
-            float _TeamMarkerTriangleWidthX;
+            uniform float _TeamMarkerHue;
+            uniform float _TeamMarkerSaturation;
+            uniform float _TeamMarkerBrightness;
+            uniform float _TeamMarkerAlpha;
+            uniform float _TeamMarkerTriangleFromY;
+            uniform float _TeamMarkerTriangleToY;
+            uniform float _TeamMarkerTriangleWidthX;
 
-            float _HudDistanceFromCamera;
-
-            float _ShowHealthBar;
-            float _ShowDeathIndicator;
-            float _ShowTeamMarker;
-            float _IsHUD;
+            uniform float _HudDistanceFromCamera;
+            uniform float _ShowHealthBar;
+            uniform float _ShowDeathIndicator;
+            uniform float _ShowTeamMarker;
+            uniform float _IsHUD;
         
             float mapRange(float input_start, float input_end, float output_start, float output_end, float input) {
                 return output_start + ((output_end - output_start) / (input_end - input_start)) * (input - input_start);
