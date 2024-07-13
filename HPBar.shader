@@ -54,6 +54,8 @@ Shader "Hroi/FireteamVR/HPBar"
 
         [Header(HUD)][Space(5)]
         _HudDistanceFromCamera("HUD Distance From Camera", Float) = 0.001
+        _VRScale("VR Scale", Float) = 0.3
+        _FlatScale("Flatscreen Scale", Float) = 0.4
 
         [Header(Toggles)][Space(5)]
         _ShowHealthBar("Show Health Bar", Float) = 1.0
@@ -65,7 +67,7 @@ Shader "Hroi/FireteamVR/HPBar"
     {
         Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" "DisableBatching" = "True" }
 
-        ZWrite Off
+        ZWrite on
         Blend SrcAlpha OneMinusSrcAlpha
         Cull Back
 
@@ -78,13 +80,6 @@ Shader "Hroi/FireteamVR/HPBar"
             #pragma multi_compile_fog
 
             #include "UnityCG.cginc"
-
-            struct appdata
-            {
-                float4 vertex : POSITION;
-                float3 normal : NORMAL;
-                float2 uv : TEXCOORD0;
-            };
 
             struct v2f
             {
@@ -146,6 +141,9 @@ Shader "Hroi/FireteamVR/HPBar"
             uniform float _TeamMarkerTriangleWidthX;
 
             uniform float _HudDistanceFromCamera;
+            uniform float _VRScale;
+            uniform float _FlatScale;
+
             uniform float _ShowHealthBar;
             uniform float _ShowDeathIndicator;
             uniform float _ShowTeamMarker;
@@ -163,36 +161,84 @@ Shader "Hroi/FireteamVR/HPBar"
                 Out = In.z * lerp(K.xxx, saturate(P - K.xxx), In.y);
             }
 
-            v2f vert (appdata v)
+            v2f vert (float4 pos : POSITION, float3 normal : NORMAL, float2 uv : TEXCOORD0)
             {
                 v2f o;
-                o.pos = v.vertex;
+                o.uv.xy = uv.xy;
 
-                float3 objectToCameraVec = normalize(ObjSpaceViewDir(float4(0, 0, 0, 0)));
+                // VR Calculations from error.mdl
+                // Source: https://web.archive.org/web/20210805153152/https://vrcat.club/threads/errors-hud-shader.2210/
+                float4 _aoffset = float4(-0.46307, -0.36493, 1.12914, 1.0);
+				#if UNITY_SINGLE_PASS_STEREO
+					float ipd = 0.07648;
+					float4 abspos = pos + float4(ipd*(0.5-unity_StereoEyeIndex), 0, 0, 0);
+					float4 camPos = mul(unity_CameraToWorld, float4(_aoffset.xyz, 1)
+                                  + float4(ipd*(0.5-unity_StereoEyeIndex), 0, 0, 0));
+                    float scale = _VRScale;
+				#else
+					float ipd = 0.0;
+					float4 abspos = pos;
+					float4 camPos = mul(unity_CameraToWorld, float4(_aoffset.xyz,1));
+                    float scale = _FlatScale;
+				#endif
 
-                // Keep the plane looking at the camera
-                float3 up = objectToCameraVec;
-                float3 forward = float3(0,1,0);
-                float3 right = normalize(cross(up, forward));
-                forward = cross(right, up);
-                float3x3 rotMatrix = float3x3(right, up, forward);
+                // Branching on uniform variable, should compile down to two shaders
+                if (_IsHUD < 0.5) {
+                    // Keep the plane looking at the camera
+                    float3 objectToCameraVec = normalize(ObjSpaceViewDir(float4(0, 0, 0, 0)));
+                    float3 up = objectToCameraVec;
+                    float3 forward = float3(0,1,0);
+                    float3 right = normalize(cross(up, forward));
+                    forward = cross(right, up);
+                    float3x3 rotMatrix = float3x3(right, up, forward);
+                    pos.xyz = mul(pos.xyz, rotMatrix);
+                    o.pos = UnityObjectToClipPos(pos);
+                } else {
+                    // Move the plane up to the camera to fill it completely
+                    // float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, _HudDistanceFromCamera * -1, 1);
+                    // float3 fullScreenPos = mul(unity_WorldToObject, mul(UNITY_MATRIX_I_V, screenCoords)).xyz;
 
-                // Move the plane up to the camera to fill it completely
-                float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, _HudDistanceFromCamera * -1, 1);
-                float3 fullScreenPos = mul(unity_WorldToObject, mul(UNITY_MATRIX_I_V, screenCoords)).xyz;
+                    // Scale the plane to be more circular and expand faster further from center
+                    float positiveX = (pos.x > 0) * 2 - 1;
+                    float positiveZ = (pos.z > 0) * 2 - 1;
+                    float absX = abs(pos.x);
+                    float absZ = abs(pos.z);
+                    pos.x = absX * 4 * positiveX;
+                    pos.z = absZ * 4 * positiveZ;
+                    #if UNITY_SINGLE_PASS_STEREO
+                        pos.y = absX + absZ;
+                    #endif
 
-                // This is done conditionally based on _IsHUD
-                o.pos.xyz = mul(o.pos.xyz, rotMatrix) * !_IsHUD + fullScreenPos * _IsHUD;
+                    // Make a matrix that can move the plane to the front of the camera
+                    float4x4 planeToFrontOfCam = float4x4(
+                        float4(scale, 0, 0, 0),
+                        float4(0, scale, 0, 0),
+                        float4(0, 0, scale, -5),
+                        float4(0, 0, 0, 1)
+                    );
+                    float4x4 rotMatrix = float4x4(
+                        float4(1, 0,  0, 0),
+                        float4(0, 0,  1, 0),
+                        float4(0, -1, 0, 0),
+                        float4(0, 0,  0, 1)
+                    );
+                    planeToFrontOfCam = mul(planeToFrontOfCam, rotMatrix);
+                    // This is a very weird of converting the model position over to the clip space,
+                    // but it works in this case because I don't care about moving the model to its
+                    // position, or even having the camera position/rotation affect the model. So I can
+                    // just skip the model and view matricies like this.
+                    o.pos = mul(UNITY_MATRIX_P, mul(planeToFrontOfCam, pos));
 
-                o.pos = UnityObjectToClipPos(o.pos);
-                o.uv.xy = v.uv.xy;
+                    // Make the UI go over other elements
+                    o.pos.z = 1;
+                }
 
                 // Set pre-calculations for the fragmentation shader
                 o.halfBarSize = ((1 - _BarSize) / 2);
                 o.armourBarY = mapRange(0, 1, 1 - o.halfBarSize, o.halfBarSize, _ArmourBarSize);
                 float deathShift = (sin(_Time.z * _DeathCrossShiftSpeed) + 1) / 2;
                 o.deathCrossColor = (_DeathCrossColor1 * deathShift) + (_DeathCrossColor2 * (1 - deathShift));
-                o.deathCrossTextureUV = TRANSFORM_TEX(v.uv, _DeathCrossTexture);
+                o.deathCrossTextureUV = TRANSFORM_TEX(uv, _DeathCrossTexture);
                 float3 teamColor;
                 float3 teamColorHSV = float3(_TeamMarkerHue, _TeamMarkerSaturation, _TeamMarkerBrightness);
                 Unity_ColorspaceConversion_HSV_RGB_float(teamColorHSV, teamColor);
@@ -211,63 +257,79 @@ Shader "Hroi/FireteamVR/HPBar"
             fixed4 frag (v2f i) : SV_Target
             {
                 // HUD Calculations
-                float2 screenPos = i.screenPos.xy / i.screenPos.w;
+                float x;
+                float y;
+                float barX;
+                float barY;
+                if (_IsHUD < 0.5) {
+                    x = 1 - i.uv.x;
+                    y = 1 - i.uv.y;
+                    barX = x;
+                    barY = y;
+                } else {
+                    x = 1 - i.uv.x;
+                    y = 1 - i.uv.y;
+                    barX = mapRange(0, 1, 1 - _BarHudWidth, _BarHudWidth, x);
+                    barY = mapRange(0, 1, _BarHudHeight, 1 - _BarHudHeight, (y + _BarHudOffset));
+                }
 
                 // This X and Y is based on the screenspace if _IsHUD is true and
                 // otherwise the UVs of the model.
-                float x = ((1 - i.uv.x) * !_IsHUD) + (mapRange(0, 1, 1 - _BarHudWidth, _BarHudWidth, screenPos.x) * _IsHUD);
-                float y = ((1 - i.uv.y) * !_IsHUD) + (mapRange(0, 1, _BarHudHeight, 1 - _BarHudHeight, (screenPos.y + _BarHudOffset)) * _IsHUD);
+                // float x = ((1 - i.uv.x) * !_IsHUD) + (mapRange(0, 1, 1 - _BarHudWidth, _BarHudWidth, screenPos.x) * _IsHUD);
+                // float y = ((1 - i.uv.y) * !_IsHUD) + (mapRange(0, 1, _BarHudHeight, 1 - _BarHudHeight, (screenPos.y + _BarHudOffset)) * _IsHUD);
 
                 // Armour calculations
-                float isArmourPos = x * _MaxArmour < _Armour;
+                float isArmourPos = barX * _MaxArmour < _Armour;
                 float4 armourColor = _ArmourColor * isArmourPos;
 
                 // Do the HP color calculations
-                float isGoodPos = x * _MaxHealth < _Health;
+                float isGoodPos = barX * _MaxHealth < _Health;
                 float4 hpBarColor = _GoodColor * isGoodPos + _BadColor * !isGoodPos;
 
                 // Differentiate between armour and hp bars
-                float isBar = (i.halfBarSize < y) * ((1 - i.halfBarSize) > y) * (x > 0) * (x < 1);
-                float isHpBar = y < i.armourBarY;
+                float isBar = (i.halfBarSize < barY) * ((1 - i.halfBarSize) > barY) * (barX > 0) * (barX < 1);
+                float isHpBar = barY < i.armourBarY;
                 float4 healthBarSolid = (hpBarColor * isBar * isHpBar) + (armourColor * isBar * !isHpBar);
                 float4 healthBarAlpha = float4(healthBarSolid.xyz, _Alpha * isBar);
 
-                // Team indicator
-                float trianglePos = mapRange(_TeamMarkerTriangleFromY, _TeamMarkerTriangleToY, 0, 1, y);
-                float triangleX = mapRange(_TeamMarkerTriangleWidthX, 1 - _TeamMarkerTriangleWidthX, 0, 1, x);
-                float inTeamMarker = (0 < trianglePos) * (trianglePos < 1)
-                    * ((1.0 - triangleX) < trianglePos) * ((triangleX) < trianglePos);
-                float4 teamMarker = i.teamColor * inTeamMarker;
+                if (_IsHUD < 0.5) {
+                    // Team indicator
+                    float trianglePos = mapRange(_TeamMarkerTriangleFromY, _TeamMarkerTriangleToY, 0, 1, y);
+                    float triangleX = mapRange(_TeamMarkerTriangleWidthX, 1 - _TeamMarkerTriangleWidthX, 0, 1, x);
+                    float inTeamMarker = (0 < trianglePos) * (trianglePos < 1)
+                        * ((1.0 - triangleX) < trianglePos) * ((triangleX) < trianglePos);
+                    float4 teamMarker = i.teamColor * inTeamMarker;
 
-                // Add the death cross
-                fixed4 texCol = tex2D(_DeathCrossTexture, i.deathCrossTextureUV);
-                fixed4 deathCrossFinal = texCol * i.deathCrossColor;
-                float4 aboveHead = (healthBarAlpha * _ShowHealthBar)
-                    + (teamMarker * _ShowTeamMarker)
-                    + (deathCrossFinal * _ShowDeathIndicator);
+                    // Add the death cross
+                    fixed4 texCol = tex2D(_DeathCrossTexture, i.deathCrossTextureUV);
+                    fixed4 deathCrossFinal = texCol * i.deathCrossColor;
+                    float4 aboveHead = (healthBarAlpha * _ShowHealthBar)
+                        + (teamMarker * _ShowTeamMarker)
+                        + (deathCrossFinal * _ShowDeathIndicator);
+                    return aboveHead;
+                } else {
+                    // Tunnel vision HUD
+                    // float normalTunnelVision = max((abs(screenPos.x - 0.5) + abs(screenPos.y - 0.5)), 0.5);
+                    float2 curr = float2((x * 2) - 1, (y * 2) - 1);
+                    float vecLength = pow(curr.x, 2) + pow(curr.y, 2);
+                    float tunnelVisionStrength = pow(vecLength, _TunnelVisionStrength);
+                    float normalTunnelVision = tunnelVisionStrength * _TunnelVision;
+                    float4 tunnelVisionFinal = float4(0, 0, 0, normalTunnelVision);
 
-                // Tunnel vision HUD
-                // float normalTunnelVision = max((abs(screenPos.x - 0.5) + abs(screenPos.y - 0.5)), 0.5);
-                float2 curr = float2((screenPos.x * 2) - 1, (screenPos.y * 2) - 1);
-                float vecLength = pow(curr.x, 2) + pow(curr.y, 2);
-                float tunnelVisionStrength = pow(vecLength, _TunnelVisionStrength);
-                float normalTunnelVision = tunnelVisionStrength * _TunnelVision;
-                float4 tunnelVisionFinal = float4(0, 0, 0, normalTunnelVision);
+                    // You died HUD text
+                    float2 deathHudTexUV = float2(x, y) * i.deathHudAspectRatioAdjustment;
+                    deathHudTexUV.y += _DeathHudLocationY * -1;
+                    deathHudTexUV -= i.deathHudCenteringOffset;
+                    float4 deathHudTex = tex2D(_DeathHudOverlay, deathHudTexUV);
+                    float renderDeathHudText = (deathHudTex.w > 0.1)
+                        * ((deathHudTexUV.x > 0) * (deathHudTexUV.x < 1))
+                        * ((deathHudTexUV.y > 0) * (deathHudTexUV.y < 1));
+                    float4 deathHudFinal = deathHudTex * renderDeathHudText + _DeathHudColor * !renderDeathHudText;
 
-                // You died HUD text
-                float2 deathHudTexUV = screenPos * i.deathHudAspectRatioAdjustment;
-                deathHudTexUV.y += _DeathHudLocationY * -1;
-                deathHudTexUV -= i.deathHudCenteringOffset;
-                float4 deathHudTex = tex2D(_DeathHudOverlay, deathHudTexUV);
-                float renderDeathHudText = (deathHudTex.w > 0.1)
-                    * ((deathHudTexUV.x > 0) * (deathHudTexUV.x < 1))
-                    * ((deathHudTexUV.y > 0) * (deathHudTexUV.y < 1));
-                float4 deathHudFinal = deathHudTex * renderDeathHudText + _DeathHudColor * !renderDeathHudText;
-
-                float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarAlpha.w)) + healthBarAlpha;
-                float4 hudFinalDeath = hudFinal * !_ShowDeathIndicator + deathHudFinal * _ShowDeathIndicator;
-
-                return (aboveHead * !_IsHUD) + (hudFinalDeath * _IsHUD);
+                    float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarAlpha.w)) + healthBarAlpha;
+                    float4 hudFinalDeath = hudFinal * !_ShowDeathIndicator + deathHudFinal * _ShowDeathIndicator;
+                    return hudFinalDeath;
+                }
             }
             ENDCG
         }
