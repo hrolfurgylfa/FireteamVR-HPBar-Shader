@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
+  m_CustomRenderQueue: 3999
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -71,29 +71,29 @@ Material:
     - _ShowDeathIndicator: 0
     - _ShowHealthBar: 1
     m_Floats:
-    - _Alpha: 0.6
+    - _Alpha: 0.1
     - _Armour: 0.95
     - _ArmourBarSize: 0.3
     - _BarAlpha: 0.6
-    - _BarHudHeight: -0.36
-    - _BarHudOffset: -0.16
-    - _BarHudWidth: 1.59
+    - _BarHudHeight: -1.41
+    - _BarHudOffset: -0.12
+    - _BarHudWidth: 1.96
     - _BarOffset: 0
     - _BarSize: 0.1
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DeathCrossShiftSpeed: 1.44
-    - _DeathHudLocationY: 1.92
+    - _DeathHudLocationY: 0.48
     - _DeathHudSize: 6.75
     - _DeathHudSizeX: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
-    - _FlatScale: 0.3
+    - _FlatScale: 0.015
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Health: 0.74
-    - _HudDistanceFromCamera: 10
+    - _HudDistanceFromCamera: 0.05
     - _IsHUD: 1
     - _MaxArmour: 1
     - _MaxHealth: 0.93
@@ -117,7 +117,7 @@ Material:
     - _TunnelVision: 0.64
     - _TunnelVisionStrength: 1
     - _UVSec: 0
-    - _VRScale: 0.3
+    - _VRScale: 0.015
     - _ZWrite: 1
     m_Colors:
     - _ArmourColor: {r: 0.49803925, g: 0.83921576, b: 0.98823535, a: 1}

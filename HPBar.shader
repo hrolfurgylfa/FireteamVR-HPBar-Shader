@@ -53,7 +53,7 @@ Shader "Hroi/FireteamVR/HPBar"
         _TeamMarkerTriangleWidthX("Team Marker Width X", Float) = 0.39
 
         [Header(HUD)][Space(5)]
-        _HudDistanceFromCamera("HUD Distance From Camera", Float) = 0.001
+        _HudDistanceFromCamera("HUD Distance From Camera", Float) = 0.5
         _VRScale("VR Scale", Float) = 0.3
         _FlatScale("Flatscreen Scale", Float) = 0.4
 
@@ -148,7 +148,7 @@ Shader "Hroi/FireteamVR/HPBar"
             uniform float _ShowDeathIndicator;
             uniform float _ShowTeamMarker;
             uniform float _IsHUD;
-        
+
             float mapRange(float input_start, float input_end, float output_start, float output_end, float input) {
                 return output_start + ((output_end - output_start) / (input_end - input_start)) * (input - input_start);
             }
@@ -198,22 +198,11 @@ Shader "Hroi/FireteamVR/HPBar"
                     // float3 screenCoords = float4((v.uv - float2(0.5, 0.5)) * 2 * _ScreenParams.xy, _HudDistanceFromCamera * -1, 1);
                     // float3 fullScreenPos = mul(unity_WorldToObject, mul(UNITY_MATRIX_I_V, screenCoords)).xyz;
 
-                    // Scale the plane to be more circular and expand faster further from center
-                    float positiveX = (pos.x > 0) * 2 - 1;
-                    float positiveZ = (pos.z > 0) * 2 - 1;
-                    float absX = abs(pos.x);
-                    float absZ = abs(pos.z);
-                    pos.x = absX * 4 * positiveX;
-                    pos.z = absZ * 4 * positiveZ;
-                    #if UNITY_SINGLE_PASS_STEREO
-                        pos.y = absX + absZ;
-                    #endif
-
                     // Make a matrix that can move the plane to the front of the camera
                     float4x4 planeToFrontOfCam = float4x4(
                         float4(scale, 0, 0, 0),
                         float4(0, scale, 0, 0),
-                        float4(0, 0, scale, -5),
+                        float4(0, 0, scale, -_HudDistanceFromCamera),
                         float4(0, 0, 0, 1)
                     );
                     float4x4 rotMatrix = float4x4(
@@ -230,7 +219,7 @@ Shader "Hroi/FireteamVR/HPBar"
                     o.pos = mul(UNITY_MATRIX_P, mul(planeToFrontOfCam, pos));
 
                     // Make the UI go over other elements
-                    o.pos.z = 1;
+                    // o.pos.z = 1;
                 }
 
                 // Set pre-calculations for the fragmentation shader
