@@ -1,2 +1,6 @@
 # Ignore krita backup files
 *.*~
+
+# Ignore blender backup files
+*.blend[1-9]
+*.blend[1-9].meta
