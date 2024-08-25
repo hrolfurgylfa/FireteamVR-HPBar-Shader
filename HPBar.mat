@@ -71,7 +71,7 @@ Material:
     - _ShowDeathIndicator: 0
     - _ShowHealthBar: 1
     m_Floats:
-    - _Alpha: 0.1
+    - _Alpha: 0.6
     - _Armour: 0.95
     - _ArmourBarSize: 0.3
     - _BarAlpha: 0.6
@@ -102,7 +102,7 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _ShowDeathIndicator: 0
-    - _ShowHealthBar: 1
+    - _ShowHealthBar: 0
     - _ShowTeamMarker: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -114,7 +114,7 @@ Material:
     - _TeamMarkerTriangleFromY: 0.6
     - _TeamMarkerTriangleToY: 0.8
     - _TeamMarkerTriangleWidthX: 0.39
-    - _TunnelVision: 0.64
+    - _TunnelVision: 18.3
     - _TunnelVisionStrength: 1
     - _UVSec: 0
     - _VRScale: 0.015

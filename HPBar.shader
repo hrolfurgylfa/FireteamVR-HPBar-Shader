@@ -315,7 +315,8 @@ Shader "Hroi/FireteamVR/HPBar"
                         * ((deathHudTexUV.y > 0) * (deathHudTexUV.y < 1));
                     float4 deathHudFinal = deathHudTex * renderDeathHudText + _DeathHudColor * !renderDeathHudText;
 
-                    float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarAlpha.w)) + healthBarAlpha;
+                    float4 healthBarNewAlpha = (healthBarAlpha * _ShowHealthBar);
+                    float4 hudFinal = tunnelVisionFinal * (1 - round(healthBarNewAlpha.w)) + healthBarNewAlpha;
                     float4 hudFinalDeath = hudFinal * !_ShowDeathIndicator + deathHudFinal * _ShowDeathIndicator;
                     return hudFinalDeath;
                 }
