@@ -16,7 +16,7 @@ Material:
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3999
+  m_CustomRenderQueue: 5000
   stringTagMap: {}
   disabledShaderPasses: []
   m_LockedProperties: 
@@ -86,6 +86,7 @@ Material:
     - _DeathHudLocationY: 0.48
     - _DeathHudSize: 6.75
     - _DeathHudSizeX: 0.5
+    - _DebugZDepth: 0
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
     - _FlatScale: 0.015
@@ -102,7 +103,7 @@ Material:
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _ShowDeathIndicator: 0
-    - _ShowHealthBar: 0
+    - _ShowHealthBar: 1
     - _ShowTeamMarker: 1
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
@@ -114,7 +115,7 @@ Material:
     - _TeamMarkerTriangleFromY: 0.6
     - _TeamMarkerTriangleToY: 0.8
     - _TeamMarkerTriangleWidthX: 0.39
-    - _TunnelVision: 18.3
+    - _TunnelVision: 0.7
     - _TunnelVisionStrength: 1
     - _UVSec: 0
     - _VRScale: 0.015

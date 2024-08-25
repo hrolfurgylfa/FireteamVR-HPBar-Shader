@@ -56,6 +56,7 @@ Shader "Hroi/FireteamVR/HPBar"
         _HudDistanceFromCamera("HUD Distance From Camera", Float) = 0.5
         _VRScale("VR Scale", Float) = 0.3
         _FlatScale("Flatscreen Scale", Float) = 0.4
+        _VRClipSpaceZDepth("VR Clip Space Z Depth", Float) = 0.05
 
         [Header(Toggles)][Space(5)]
         _ShowHealthBar("Show Health Bar", Float) = 1.0
@@ -65,9 +66,9 @@ Shader "Hroi/FireteamVR/HPBar"
     }
     SubShader
     {
-        Tags{ "Queue" = "Transparent" "IgnoreProjector" = "True" "RenderType" = "Transparent" "DisableBatching" = "True" }
+        Tags{ "Queue" = "Transparent" "RenderType" = "Transparent" }
 
-        ZWrite on
+        ZWrite off
         Blend SrcAlpha OneMinusSrcAlpha
         Cull Back
 
@@ -143,6 +144,7 @@ Shader "Hroi/FireteamVR/HPBar"
             uniform float _HudDistanceFromCamera;
             uniform float _VRScale;
             uniform float _FlatScale;
+            uniform float _VRClipSpaceZDepth;
 
             uniform float _ShowHealthBar;
             uniform float _ShowDeathIndicator;
@@ -219,7 +221,7 @@ Shader "Hroi/FireteamVR/HPBar"
                     o.pos = mul(UNITY_MATRIX_P, mul(planeToFrontOfCam, pos));
 
                     // Make the UI go over other elements
-                    // o.pos.z = 1;
+                    o.pos.z = _VRClipSpaceZDepth;
                 }
 
                 // Set pre-calculations for the fragmentation shader
